@@ -1,13 +1,49 @@
 name: learn-github-actions
 run-name: ${{ github.actor }} is learning GitHub Actions
-on: [push]
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 jobs:
-  check-bats-version:
+  build:
     runs-on: ubuntu-latest
+    # Define the steps to execute in this job
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Step to checkout the source code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+        # Step to set up the Node.js version
+      - name: Install node js v20
+        uses: actions/setup-node@v2
         with:
-          node-version: '20'
-      - run: npm install -g bats
-      - run: bats -v
+          node-version: "20"
+      # Step to install Node.js dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step to install Chrome browser for Playwright
+      - name: Install Chrome browser for Playwright
+        run: npx playwright install chrome
+
+      # Step to run tests with qa as environment variable similarly we can define qa|dev|qaApi|devApi
+      - name: Run tests
+        run: npm run test:ui
+
+      # Step to wait for the job to complete
+      - name: Wait for job completion
+        # Adjust the wait time as needed
+        run: sleep 10s
+        # This step should always run, even if previous steps fail
+        if: always()
+      # Check if HTML report exists
+      - name: Check if HTML report exists
+        run: |
+          if [ -d "html-report" ]; then
+            echo "HTML report exists."
+          else
+            echo "HTML report does not exist. Exiting..."
+            exit 1
+          fi
+        if: always()
